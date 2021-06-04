@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Fabrikam.DroneDelivery.Common;
@@ -15,8 +16,9 @@ using Fabrikam.DroneDelivery.DeliveryService.Services;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 {
+    [ApiController]
     [Route("api/[controller]")]
-    public class DeliveriesController : Controller
+    public class DeliveriesController : ControllerBase
     {
         private readonly IDeliveryRepository deliveryRepository;
         private readonly INotifyMeRequestRepository notifyMeRequestRepository;
@@ -40,7 +42,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         // GET api/deliveries/5
         [HttpGet("{id}", Name = "GetDelivery")]
         [HttpGet("public/{id}")]
-        [ProducesResponseType(typeof(Delivery), 200)]
+        [ProducesResponseType(typeof(Delivery), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get(string id)
         {
             logger.LogInformation("In Get action with id: {Id}", id);
@@ -58,7 +60,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 
         // GET api/deliveries/5/owner
         [HttpGet("{id}/owner")]
-        [ProducesResponseType(typeof(UserAccount), 200)]
+        [ProducesResponseType(typeof(UserAccount), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOwner(string id)
         {
             logger.LogInformation("In GetOwner action with id: {Id}", id);
@@ -75,7 +77,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 
         // GET api/deliveries/5/status
         [HttpGet("{id}/status")]
-        [ProducesResponseType(typeof(DeliveryStatus), 200)]
+        [ProducesResponseType(typeof(DeliveryStatus), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStatus(string id)
         {
             logger.LogInformation("In GetStatus action with id: {Id}", id);
@@ -93,8 +95,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 
         // PUT api/deliveries/5
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(Delivery), 201)]
-        [ProducesResponseType(typeof(void), 204)]
+        [ProducesResponseType(typeof(Delivery), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Put([FromBody]Delivery delivery, string id)
         {
             logger.LogInformation("In Put action with delivery {Id}: {@DeliveryInfo}", id, delivery.ToLogInfo());
@@ -262,6 +264,19 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             await deliveryRepository.DeleteAsync(id, confirmedDelivery);
 
             return Ok();
+        }
+
+        [HttpGet("summary")]
+        [ProducesResponseType(typeof(DeliveriesSummary), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSummary([FromQuery] string ownerId, [FromQuery] int year, [FromQuery] int month)
+        {
+            var deliveryCount = await deliveryRepository.GetDeliveryCountAsync(ownerId, year, month);
+
+            return Ok(
+                new DeliveriesSummary
+                {
+                    Count = deliveryCount
+                });
         }
     }
 }
